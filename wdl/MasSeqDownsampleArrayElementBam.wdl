@@ -15,6 +15,7 @@ workflow MasSeqDownsampleArrayElementBam {
 
     input {
         File array_element_bam
+        File ccs_array_element_bam
         String sample_name
 
         String gcs_out_root_dir = "gs://broad-dsde-methods-long-reads-outgoing/MasSeqDownsampleArrayElementBam"
@@ -22,6 +23,7 @@ workflow MasSeqDownsampleArrayElementBam {
 
     parameter_meta {
         array_element_bam : "Bam file containing MAS-seq array elements."
+        ccs_array_element_bam : "Bam file containing CCS corrected MAS-seq array elements."
         sample_name : "Name of the sample being processed."
         gcs_out_root_dir  : "GCS bucket to store the output."
     }
@@ -41,9 +43,9 @@ workflow MasSeqDownsampleArrayElementBam {
     }
 
     # Downsample by various factors:
-    call TX_PRE.DownsampleToIsoSeqEquivalent as t03_DownsampleToIsoSeqEquivalent {
+    call TX_PRE.DownsampleToIsoSeqEquivalent as t03_DownsampleCcsReadsToIsoSeqEquivalent {
         input:
-            array_element_bam = array_element_bam,
+            array_element_bam = ccs_array_element_bam,
             prefix = sample_name + "_downsampled_to_isoseq"
     }
     if (num_reads > 1000000 ) {
@@ -95,7 +97,7 @@ workflow MasSeqDownsampleArrayElementBam {
 
     call FF.FinalizeToDir as t09_FinalizeDownsampledToIsoseqReads {
         input:
-            files = [t03_DownsampleToIsoSeqEquivalent.downsampled_bam],
+            files = [t03_DownsampleCcsReadsToIsoSeqEquivalent.downsampled_bam],
             outdir = base_out_dir + "downsampled_to_isoseq"
     }
 
@@ -137,5 +139,17 @@ workflow MasSeqDownsampleArrayElementBam {
                 files = select_all([t08_DownsampleSamTo30mReads.output_bam]),
                 outdir = base_out_dir + "downsampled_to_30m"
         }
+    }
+
+    # Write out some metadata here:
+    call FF.WriteNamedFile as WriteNumReadsFile {
+        input:
+            name = "Num_reads_" + num_reads,
+            outdir = base_out_dir
+    }
+    call FF.WriteNamedFile as WriteNumZMWsFile {
+        input:
+            name = "Num_ZMWs_" + t02_CountZMWs.num_zmws,
+            outdir = base_out_dir
     }
 }
