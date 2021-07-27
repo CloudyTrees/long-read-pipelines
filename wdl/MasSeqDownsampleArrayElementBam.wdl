@@ -43,6 +43,10 @@ workflow MasSeqDownsampleArrayElementBam {
             bam = array_element_bam
     }
 
+    RuntimeAttr fat_mem_attrs = object {
+        mem_gb: 32
+    }
+
     # Downsample by various factors:
     call TX_PRE.DownsampleToIsoSeqEquivalent as t_04_DownsampleCcsReadsToIsoSeqEquivalent {
         input:
@@ -73,6 +77,7 @@ workflow MasSeqDownsampleArrayElementBam {
                 bam = array_element_bam,
                 probability = 10000000.0 / num_reads,
                 strategy = "Chained",
+                runtime_attr_override = fat_mem_attrs,
                 prefix = sample_name + "_downsampled_to_10m"
         }
     }
@@ -82,6 +87,7 @@ workflow MasSeqDownsampleArrayElementBam {
                 bam = array_element_bam,
                 probability = 20000000.0 / num_reads,
                 strategy = "Chained",
+                runtime_attr_override = fat_mem_attrs,
                 prefix = sample_name + "_downsampled_to_20m"
         }
     }
@@ -91,6 +97,7 @@ workflow MasSeqDownsampleArrayElementBam {
                 bam = array_element_bam,
                 probability = 30000000.0 / num_reads,
                 strategy = "Chained",
+                runtime_attr_override = fat_mem_attrs,
                 prefix = sample_name + "_downsampled_to_30m"
         }
     }
@@ -110,7 +117,8 @@ workflow MasSeqDownsampleArrayElementBam {
     if (num_reads > 1000000 ) {
         call FF.FinalizeToDir as t_11_FinalizeDownsampledTo1mReads {
             input:
-                files = select_all([t_05_DownsampleSamTo1mReads.output_bam]),
+                files = select_all([t_05_DownsampleSamTo1mReads.output_bam,
+                                   t_05_DownsampleSamTo1mReads.output_bam_index]),
                 outdir = base_out_dir + "downsampled_to_01m"
         }
     }
@@ -118,7 +126,8 @@ workflow MasSeqDownsampleArrayElementBam {
     if (num_reads > 5000000 ) {
         call FF.FinalizeToDir as t_12_FinalizeDownsampledTo5mReads {
             input:
-                files = select_all([t_06_DownsampleSamTo5mReads.output_bam]),
+                files = select_all([t_06_DownsampleSamTo5mReads.output_bam,
+                                   t_06_DownsampleSamTo5mReads.output_bam_index]),
                 outdir = base_out_dir + "downsampled_to_05m"
         }
     }
@@ -126,7 +135,8 @@ workflow MasSeqDownsampleArrayElementBam {
     if (num_reads > 10000000 ) {
         call FF.FinalizeToDir as t_13_FinalizeDownsampledTo10mReads {
             input:
-                files = select_all([t_07_DownsampleSamTo10mReads.output_bam]),
+                files = select_all([t_07_DownsampleSamTo10mReads.output_bam,
+                                   t_07_DownsampleSamTo10mReads.output_bam_index]),
                 outdir = base_out_dir + "downsampled_to_10m"
         }
     }
@@ -134,7 +144,8 @@ workflow MasSeqDownsampleArrayElementBam {
     if (num_reads > 20000000 ) {
         call FF.FinalizeToDir as t_14_FinalizeDownsampledTo20mReads {
             input:
-                files = select_all([t_08_DownsampleSamTo20mReads.output_bam]),
+                files = select_all([t_08_DownsampleSamTo20mReads.output_bam,
+                                   t_08_DownsampleSamTo20mReads.output_bam_index]),
                 outdir = base_out_dir + "downsampled_to_20m"
         }
     }
@@ -142,7 +153,8 @@ workflow MasSeqDownsampleArrayElementBam {
     if (num_reads > 30000000 ) {
         call FF.FinalizeToDir as t_15_FinalizeDownsampledTo30mReads {
             input:
-                files = select_all([t_09_DownsampleSamTo30mReads.output_bam]),
+                files = select_all([t_09_DownsampleSamTo30mReads.output_bam,
+                                   t_09_DownsampleSamTo30mReads.output_bam_index]),
                 outdir = base_out_dir + "downsampled_to_30m"
         }
     }
