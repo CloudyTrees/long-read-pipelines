@@ -522,7 +522,7 @@ task DownsampleSam {
         # Make sure we use all our proocesors:
         np=$(cat /proc/cpuinfo | grep ^processor | tail -n1 | awk '{print $NF+1}')
 
-        gatk DownsampleSam -I ~{bam} -O ~{prefix}.bam -S ~{strategy} -P ~{probability} ~{extra_args}
+        gatk DownsampleSam --VALIDATION_STRINGENCY SILENT -I ~{bam} -O ~{prefix}.bam -S ~{strategy} -P ~{probability} ~{extra_args}
         samtools index -@$np ~{prefix}.bam
     >>>
 
@@ -534,7 +534,7 @@ task DownsampleSam {
     #########################
     RuntimeAttr default_attr = object {
         cpu_cores:          1,
-        mem_gb:             2,
+        mem_gb:             8,
         disk_gb:            disk_size,
         boot_disk_gb:       10,
         preemptible_tries:  2,

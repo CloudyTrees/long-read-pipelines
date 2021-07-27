@@ -28,28 +28,29 @@ workflow MasSeqDownsampleArrayElementBam {
         gcs_out_root_dir  : "GCS bucket to store the output."
     }
 
+    call UTILS.GetCurrentTimestampString as t_01_WdlExecutionStartTimestamp { input: }
     String outdir = sub(gcs_out_root_dir, "/$", "")
 
     # Get the number of reads in the given bam
-    call UTILS.CountBamRecords as t01_CountBamRecords {
+    call UTILS.CountBamRecords as t_02_CountBamRecords {
         input:
             bam = array_element_bam
     }
-    Float num_reads = t01_CountBamRecords.num_records
+    Float num_reads = t_02_CountBamRecords.num_records
     # Get the number of ZMWs in the given bam
-    call PB.CountZMWs as t02_CountZMWs {
+    call PB.CountZMWs as t_03_CountZMWs {
         input:
             bam = array_element_bam
     }
 
     # Downsample by various factors:
-    call TX_PRE.DownsampleToIsoSeqEquivalent as t03_DownsampleCcsReadsToIsoSeqEquivalent {
+    call TX_PRE.DownsampleToIsoSeqEquivalent as t_04_DownsampleCcsReadsToIsoSeqEquivalent {
         input:
             array_element_bam = ccs_array_element_bam,
             prefix = sample_name + "_downsampled_to_isoseq"
     }
     if (num_reads > 1000000 ) {
-        call UTILS.DownsampleSam as t04_DownsampleSamTo1mReads {
+        call UTILS.DownsampleSam as t_05_DownsampleSamTo1mReads {
             input:
                 bam = array_element_bam,
                 probability = 1000000.0 / num_reads,
@@ -57,7 +58,7 @@ workflow MasSeqDownsampleArrayElementBam {
         }
     }
     if (num_reads > 5000000 ) {
-        call UTILS.DownsampleSam as t05_DownsampleSamTo5mReads {
+        call UTILS.DownsampleSam as t_06_DownsampleSamTo5mReads {
             input:
                 bam = array_element_bam,
                 probability = 5000000.0 / num_reads,
@@ -65,7 +66,7 @@ workflow MasSeqDownsampleArrayElementBam {
         }
     }
     if (num_reads > 10000000 ) {
-        call UTILS.DownsampleSam as t06_DownsampleSamTo10mReads {
+        call UTILS.DownsampleSam as t_07_DownsampleSamTo10mReads {
             input:
                 bam = array_element_bam,
                 probability = 10000000.0 / num_reads,
@@ -73,7 +74,7 @@ workflow MasSeqDownsampleArrayElementBam {
         }
     }
     if (num_reads > 20000000 ) {
-        call UTILS.DownsampleSam as t07_DownsampleSamTo20mReads {
+        call UTILS.DownsampleSam as t_08_DownsampleSamTo20mReads {
             input:
                 bam = array_element_bam,
                 probability = 20000000.0 / num_reads,
@@ -81,7 +82,7 @@ workflow MasSeqDownsampleArrayElementBam {
         }
     }
     if (num_reads > 30000000 ) {
-        call UTILS.DownsampleSam as t08_DownsampleSamTo30mReads {
+        call UTILS.DownsampleSam as t_09_DownsampleSamTo30mReads {
             input:
                 bam = array_element_bam,
                 probability = 30000000.0 / num_reads,
@@ -93,63 +94,63 @@ workflow MasSeqDownsampleArrayElementBam {
     # store the results into designated bucket
     ##########
 
-    String base_out_dir = outdir + "/" + sample_name + "/"
+    String base_out_dir = outdir + "/" + sample_name + "/" + t_01_WdlExecutionStartTimestamp.timestamp_string + "/"
 
-    call FF.FinalizeToDir as t09_FinalizeDownsampledToIsoseqReads {
+    call FF.FinalizeToDir as t_10_FinalizeDownsampledToIsoseqReads {
         input:
-            files = [t03_DownsampleCcsReadsToIsoSeqEquivalent.downsampled_bam],
-            outdir = base_out_dir + "downsampled_to_isoseq"
+            files = [t_04_DownsampleCcsReadsToIsoSeqEquivalent.downsampled_bam],
+            outdir = base_out_dir + "downsampled_to_isoseq",
     }
 
     if (num_reads > 1000000 ) {
-        call FF.FinalizeToDir as t10_FinalizeDownsampledTo1mReads {
+        call FF.FinalizeToDir as t_11_FinalizeDownsampledTo1mReads {
             input:
-                files = select_all([t04_DownsampleSamTo1mReads.output_bam]),
+                files = select_all([t_05_DownsampleSamTo1mReads.output_bam]),
                 outdir = base_out_dir + "downsampled_to_01m"
         }
     }
 
     if (num_reads > 5000000 ) {
-        call FF.FinalizeToDir as t11_FinalizeDownsampledTo5mReads {
+        call FF.FinalizeToDir as t_12_FinalizeDownsampledTo5mReads {
             input:
-                files = select_all([t05_DownsampleSamTo5mReads.output_bam]),
+                files = select_all([t_06_DownsampleSamTo5mReads.output_bam]),
                 outdir = base_out_dir + "downsampled_to_05m"
         }
     }
 
     if (num_reads > 10000000 ) {
-        call FF.FinalizeToDir as t12_FinalizeDownsampledTo10mReads {
+        call FF.FinalizeToDir as t_13_FinalizeDownsampledTo10mReads {
             input:
-                files = select_all([t06_DownsampleSamTo10mReads.output_bam]),
+                files = select_all([t_07_DownsampleSamTo10mReads.output_bam]),
                 outdir = base_out_dir + "downsampled_to_10m"
         }
     }
 
     if (num_reads > 20000000 ) {
-        call FF.FinalizeToDir as t13_FinalizeDownsampledTo20mReads {
+        call FF.FinalizeToDir as t_14_FinalizeDownsampledTo20mReads {
             input:
-                files = select_all([t07_DownsampleSamTo20mReads.output_bam]),
+                files = select_all([t_08_DownsampleSamTo20mReads.output_bam]),
                 outdir = base_out_dir + "downsampled_to_20m"
         }
     }
 
     if (num_reads > 30000000 ) {
-        call FF.FinalizeToDir as t14_FinalizeDownsampledTo30mReads {
+        call FF.FinalizeToDir as t_15_FinalizeDownsampledTo30mReads {
             input:
-                files = select_all([t08_DownsampleSamTo30mReads.output_bam]),
+                files = select_all([t_09_DownsampleSamTo30mReads.output_bam]),
                 outdir = base_out_dir + "downsampled_to_30m"
         }
     }
 
     # Write out some metadata here:
-    call FF.WriteNamedFile as WriteNumReadsFile {
+    call FF.WriteNamedFile as t_16_WriteNumReadsFile {
         input:
             name = "Num_reads_" + num_reads,
             outdir = base_out_dir
     }
-    call FF.WriteNamedFile as WriteNumZMWsFile {
+    call FF.WriteNamedFile as t_17_WriteNumZMWsFile {
         input:
-            name = "Num_ZMWs_" + t02_CountZMWs.num_zmws,
+            name = "Num_ZMWs_" + t_03_CountZMWs.num_zmws,
             outdir = base_out_dir
     }
 }

@@ -67,10 +67,12 @@ task DownsampleToIsoSeqEquivalent {
 
     Int disk_size = 10 + 20 * ceil(size(array_element_bam, "GB"))
 
-    String out_name = sub(array_element_bam, ".bam$", ".ZMW_downsampled.bam")
+    String out_name = basename(array_element_bam, ".bam") + ".ZMW_downsampled.bam"
 
     command {
         /python_scripts/downsample_masseq_by_zmw.py ~{array_element_bam}
+
+        # TODO: THIS IS A HACK - FIX IT LATER
         mv ~{out_name} ~{prefix}.bam
     }
 
