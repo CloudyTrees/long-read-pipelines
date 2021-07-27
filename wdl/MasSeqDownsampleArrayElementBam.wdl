@@ -54,6 +54,7 @@ workflow MasSeqDownsampleArrayElementBam {
             input:
                 bam = array_element_bam,
                 probability = 1000000.0 / num_reads,
+                strategy = "Chained",
                 prefix = sample_name + "_downsampled_to_1m"
         }
     }
@@ -62,6 +63,7 @@ workflow MasSeqDownsampleArrayElementBam {
             input:
                 bam = array_element_bam,
                 probability = 5000000.0 / num_reads,
+                strategy = "Chained",
                 prefix = sample_name + "_downsampled_to_5m"
         }
     }
@@ -70,6 +72,7 @@ workflow MasSeqDownsampleArrayElementBam {
             input:
                 bam = array_element_bam,
                 probability = 10000000.0 / num_reads,
+                strategy = "Chained",
                 prefix = sample_name + "_downsampled_to_10m"
         }
     }
@@ -78,6 +81,7 @@ workflow MasSeqDownsampleArrayElementBam {
             input:
                 bam = array_element_bam,
                 probability = 20000000.0 / num_reads,
+                strategy = "Chained",
                 prefix = sample_name + "_downsampled_to_20m"
         }
     }
@@ -86,6 +90,7 @@ workflow MasSeqDownsampleArrayElementBam {
             input:
                 bam = array_element_bam,
                 probability = 30000000.0 / num_reads,
+                strategy = "Chained",
                 prefix = sample_name + "_downsampled_to_30m"
         }
     }
