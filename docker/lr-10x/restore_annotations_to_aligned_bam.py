@@ -74,7 +74,7 @@ def main(bam_name, aligned_bam_name, out_bam_name, ignore_tags=None):
             )
             if i % 20000 == 0:
                 con.commit()
-                
+
             pbar.update(1)
 
     con.commit()
@@ -114,7 +114,7 @@ def main(bam_name, aligned_bam_name, out_bam_name, ignore_tags=None):
                 ).fetchone()
 
                 if raw:
-                    tag_tuple_list = pickle.loads(raw.encode())
+                    tag_tuple_list = pickle.loads(raw[0].encode())
                     for tag_name, tag_value in tag_tuple_list:
                         read.set_tag(tag_name, tag_value)
 
