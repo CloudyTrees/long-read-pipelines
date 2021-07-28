@@ -1,8 +1,10 @@
-VERSION = 0.1.14
-TAG1 = quay.io/broad-long-read-pipelines/lr-10x:$(VERSION)
-TAG2 = quay.io/broad-long-read-pipelines/lr-10x:latest
-TAG3 = us.gcr.io/broad-dsp-lrma/lr-10x:$(VERSION)
-TAG4 = us.gcr.io/broad-dsp-lrma/lr-10x:latest
+VERSION = 0.1.15
+NAME = lr-10x
+
+TAG1 = quay.io/broad-long-read-pipelines/$(NAME):$(VERSION)
+TAG2 = quay.io/broad-long-read-pipelines/$(NAME):latest
+TAG3 = us.gcr.io/broad-dsp-lrma/$(NAME):$(VERSION)
+TAG4 = us.gcr.io/broad-dsp-lrma/$(NAME):latest
 
 all: | build push
 
