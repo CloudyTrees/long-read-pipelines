@@ -50,7 +50,7 @@ def main(bam_name, aligned_bam_name, out_bam_name, ignore_tags=None):
         unit=" read",
         file=sys.stderr
     ) as pbar:
-        for read in bam_file:
+        for i, read in enumerate(bam_file):
             tags_to_keep = []
             if len(tag_names) == 0:
                 for t in read.get_tags():
@@ -72,9 +72,12 @@ def main(bam_name, aligned_bam_name, out_bam_name, ignore_tags=None):
                 f"{read.reference_start},"
                 f"'{pickle.dumps(tags_to_keep, 0).decode()}')"
             )
-            con.commit()
+            if i % 20000 == 0:
+                con.commit()
+                
             pbar.update(1)
 
+    con.commit()
     print("Tag list assembled.")
 
     print(f"Applying tags to reads in {aligned_bam_name} and writing to {out_bam_name}")
