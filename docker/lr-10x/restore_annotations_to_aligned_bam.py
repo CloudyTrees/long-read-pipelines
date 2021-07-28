@@ -39,7 +39,7 @@ def main(bam_name, aligned_bam_name, out_bam_name, ignore_tags=None):
     # Set up the sqlite database so we can not run out of memory anymore:
     con = sqlite3.connect("read_tags.db")
     cur = con.cursor()
-    cur.execute('''CREATE TABLE read_tags (read TEXT PRIMARY KEY, tag_tuple_list BLOB)''')
+    cur.execute('''CREATE TABLE read_tags (read TEXT, contig TEXT, position INT, tag_tuple_list BLOB, PRIMARY KEY (read, contig, position))''')
     con.commit()
 
     print(f"Reading in tags from: {bam_name}")
@@ -66,7 +66,11 @@ def main(bam_name, aligned_bam_name, out_bam_name, ignore_tags=None):
                     except KeyError:
                         pass
             cur.execute(
-                f"INSERT INTO read_tags VALUES ('{read.query_name}','{pickle.dumps(tags_to_keep, 0).decode()}')"
+                f"INSERT INTO read_tags VALUES ("
+                f"'{read.query_name}',"
+                f"'{read.reference_name}',"
+                f"{read.reference_start},"
+                f"'{pickle.dumps(tags_to_keep, 0).decode()}')"
             )
             con.commit()
             pbar.update(1)
