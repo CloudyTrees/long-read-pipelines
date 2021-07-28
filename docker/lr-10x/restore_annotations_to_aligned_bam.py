@@ -6,6 +6,9 @@ import os
 import tqdm
 import pysam
 
+import sqlite3
+import base64
+import pickle
 
 def main(bam_name, aligned_bam_name, out_bam_name, ignore_tags=None):
 
@@ -13,7 +16,6 @@ def main(bam_name, aligned_bam_name, out_bam_name, ignore_tags=None):
 
     # Tags to preserve (for now it isn't used):
     tag_names = []
-    name_taglist_dict = dict()
     pysam.set_verbosity(0)  # silence message about the .bai file not being found
 
     print("Verifying input files exist...")
@@ -33,6 +35,12 @@ def main(bam_name, aligned_bam_name, out_bam_name, ignore_tags=None):
             tags_to_ignore.add(t)
             if t in tag_names:
                 tag_names.remove(t)
+
+    # Set up the sqlite database so we can not run out of memory anymore:
+    con = sqlite3.connect("read_tags.db")
+    cur = con.cursor()
+    cur.execute('''CREATE TABLE read_tags (read TEXT PRIMARY KEY, tag_tuple_list BLOB)''')
+    con.commit()
 
     print(f"Reading in tags from: {bam_name}")
     with pysam.AlignmentFile(
@@ -57,7 +65,10 @@ def main(bam_name, aligned_bam_name, out_bam_name, ignore_tags=None):
                         tags_to_keep.append((tag_name, read.get_tag(tag_name)))
                     except KeyError:
                         pass
-            name_taglist_dict[read.query_name] = tags_to_keep
+            cur.execute(
+                f"INSERT INTO read_tags VALUES ('{read.query_name}','{pickle.dumps(tags_to_keep, 0).decode()}')"
+            )
+            con.commit()
             pbar.update(1)
 
     print("Tag list assembled.")
@@ -91,13 +102,19 @@ def main(bam_name, aligned_bam_name, out_bam_name, ignore_tags=None):
 
         with pysam.AlignmentFile(out_bam_name, "wb", header=out_header) as out_bam_file:
             for read in aligned_bam_file:
-                if read.query_name in name_taglist_dict:
-                    for tag in name_taglist_dict[read.query_name]:
-                        read.set_tag(tag[0], tag[1])
+                raw = cur.execute(
+                    f"SELECT tag_tuple_list FROM read_tags WHERE read=='{read.query_name}'"
+                ).fetchone()
+
+                if raw:
+                    tag_tuple_list = pickle.loads(raw.encode())
+                    for tag_name, tag_value in tag_tuple_list:
+                        read.set_tag(tag_name, tag_value)
 
                 out_bam_file.write(read)
 
                 pbar.update(1)
+    con.close()
     t_end = time.time()
     print("Done")
     print(f"Elapsed time: {t_end - t_start:2.2f}s")
