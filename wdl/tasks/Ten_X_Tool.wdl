@@ -527,7 +527,7 @@ task RestoreAnnotationstoAlignedBam {
     Int default_ram_mb = 32 * 1024
 
     Float reads_size_gb = size(annotated_bam_file, "GiB") + size(aligned_bam_file, "GiB")
-    Int default_disk_space_gb = ceil((reads_size_gb * 10) + 20)
+    Int default_disk_space_gb = 10 * ceil((reads_size_gb * 10) + 20)
 
     Int default_boot_disk_size_gb = 100
 
@@ -591,7 +591,7 @@ task RestoreAnnotationstoAlignedBam {
         echo "Elapsed Time: $elapsedTime" >> ~{timing_output_file}
     }
     runtime {
-        docker: "us.gcr.io/broad-dsp-lrma/lr-10x:0.1.13"
+        docker: "us.gcr.io/broad-dsp-lrma/lr-10x:0.1.15"
         memory: machine_mem + " MB"
         disks: "local-disk " + select_first([disk_space_gb, default_disk_space_gb]) + if use_ssd then " SSD" else " HDD"
         bootDiskSizeGb: select_first([boot_disk_size_gb, default_boot_disk_size_gb])

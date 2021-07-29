@@ -105,7 +105,7 @@ workflow MasSeqArrayElementAnalysis {
                 annotated_bam_file = array_element_bam,
                 aligned_bam_file = t_04_AlignArrayElementsToGenome.aligned_bam,
                 tags_to_ignore = [],
-                mem_gb = 64,  # TODO: Debug for memory redution
+                mem_gb = 8,
         }
 
         ###############################################################
@@ -122,7 +122,7 @@ workflow MasSeqArrayElementAnalysis {
                 annotated_bam_file = sharded_array_elements,
                 aligned_bam_file = t_06_AlignArrayElementsToTranscriptome.aligned_bam,
                 tags_to_ignore = [],
-                mem_gb = 64,  # TODO: Debug for memory redution
+                mem_gb = 8,
         }
 
         call Utils.FilterReadsBySamFlags as t_08_RemoveUnmappedAndNonPrimaryReads {

@@ -461,7 +461,7 @@ workflow PB10xMasSeqSingleFlowcellv2 {
                 annotated_bam_file = t_31_ExtractCodingRegionsFromArrayElements.extracted_reads,
                 aligned_bam_file = t_33_AlignArrayElementsToGenome.aligned_bam,
                 tags_to_ignore = [],
-                mem_gb = 64,  # TODO: Debug for memory redution
+                mem_gb = 8,
         }
     }
 
@@ -583,7 +583,7 @@ workflow PB10xMasSeqSingleFlowcellv2 {
                 annotated_bam_file = extracted_array_elements,
                 aligned_bam_file = t_32_AlignArrayElementsToTranscriptome.aligned_bam,
                 tags_to_ignore = [],
-                mem_gb = 64,  # TODO: Debug for memory redution
+                mem_gb = 8,
         }
 
         # To properly count our transcripts we must throw away the non-primary and unaligned reads:
