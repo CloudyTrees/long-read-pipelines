@@ -39,7 +39,7 @@ def main(bam_name, aligned_bam_name, out_bam_name, ignore_tags=None):
     # Set up the sqlite database so we can not run out of memory anymore:
     con = sqlite3.connect("read_tags.db")
     cur = con.cursor()
-    cur.execute('''CREATE TABLE read_tags (read TEXT, contig TEXT, position INT, tag_tuple_list BLOB, PRIMARY KEY (read, contig, position))''')
+    cur.execute('''CREATE TABLE read_tags (read TEXT PRIMARY KEY, contig TEXT, position INT, tag_tuple_list BLOB)''')
     con.commit()
 
     print(f"Reading in tags from: {bam_name}")
