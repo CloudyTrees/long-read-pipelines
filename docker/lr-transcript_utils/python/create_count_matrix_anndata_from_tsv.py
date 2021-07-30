@@ -454,9 +454,10 @@ def create_combined_anndata(input_tsv, gtf_field_dict, overlap_intervals=None,
                 indx = np.where(de_novo_transcript_ids == tx)[0]
                 if len(indx) > 1:
                     raise RuntimeError(f"Error: transcript appears more than once: {tx} ({i}): {indx}")
-                elif len(indx) == 0:
-                    print(f"No TX assignment for {tx} ({i})", file=sys.stderr)
-                    continue
+                # TODO: Remove debugging code:
+                # elif len(indx) == 0:
+                #     print(f"No TX assignment for {tx} ({i})", file=sys.stderr)
+                #     continue
 
                 indx = indx[0]
                 print(f"TX Assignment: {tx} ({i}): {indx} - {raw_overlap_gene_names[i]} <{raw_overlap_gene_ids[i]}>", file=sys.stderr)
@@ -464,13 +465,14 @@ def create_combined_anndata(input_tsv, gtf_field_dict, overlap_intervals=None,
                 overlap_gene_ids[indx] = raw_overlap_gene_ids[i]
                 ambiguity_markers[indx] = raw_ambiguity_markers[i]
 
-            for i, v in enumerate(overlap_gene_names):
-                if v is None:
-                    overlap_gene_names[i] = "None"
-
-            for i, v in enumerate(overlap_gene_ids):
-                if v is None:
-                    overlap_gene_ids[i] = "None"
+            # TODO: Remove debugging code:
+            # for i, v in enumerate(overlap_gene_names):
+            #     if v is None:
+            #         overlap_gene_names[i] = "None"
+            #
+            # for i, v in enumerate(overlap_gene_ids):
+            #     if v is None:
+            #         overlap_gene_ids[i] = "None"
 
             col_df["gencode_overlap_gene_names"] = overlap_gene_names
             col_df["gencode_overlap_gene_ids"] = overlap_gene_ids
