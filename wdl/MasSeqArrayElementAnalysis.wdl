@@ -35,6 +35,8 @@ workflow MasSeqArrayElementAnalysis {
         File transcriptome_quant_fasta_dict
         File transcriptome_quant_annotation_gtf
 
+        Boolean force_anndata_gencode_overwrite = false
+
         String gcs_out_root_dir = "gs://broad-dsde-methods-long-reads-outgoing/MasSeqArrayElementAnalysis"
 
         File ref_fasta =  "gs://broad-dsde-methods-long-reads/resources/references/grch38_noalt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa"
@@ -102,7 +104,7 @@ workflow MasSeqArrayElementAnalysis {
         # We need to restore the annotations we created with the 10x tool to the aligned reads.
         call TENX.RestoreAnnotationstoAlignedBam as t_05_RestoreAnnotationsToGenomeAlignedBam {
             input:
-                annotated_bam_file = array_element_bam,
+                annotated_bam_file = sharded_array_elements,
                 aligned_bam_file = t_04_AlignArrayElementsToGenome.aligned_bam,
                 tags_to_ignore = [],
                 mem_gb = 8,
@@ -198,6 +200,7 @@ workflow MasSeqArrayElementAnalysis {
             gencode_reference_gtf_file = genome_annotation_gtf,
             overlap_intervals = intervals_of_interest,
             overlap_interval_label = interval_overlap_name,
+            force_anndata_gencode_overwrite = force_anndata_gencode_overwrite,
             prefix = "~{sample_name}_gene_tx_expression_count_matrix"
     }
 

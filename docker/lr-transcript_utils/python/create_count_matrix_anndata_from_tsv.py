@@ -195,7 +195,8 @@ def get_approximate_gencode_gene_assignments(gtf_field_dict, gencode_field_val_d
 def create_combined_anndata(input_tsv, gtf_field_dict, overlap_intervals=None,
                             overlap_intervals_label="overlaps_intervals_of_interest",
                             gencode_reference_gtf=None,
-                            force_recount=False):
+                            force_recount=False,
+                            force_overwrite_gencode_overlaps=False):
 
     """Create an anndata object holding the given gene/transcript information.
     NOTE: This MUST be a sparse matrix - we got lots of data here.
@@ -433,31 +434,50 @@ def create_combined_anndata(input_tsv, gtf_field_dict, overlap_intervals=None,
         print("Done!", file=sys.stderr)
 
     if gencode_reference_gtf:
-        print(f"Adding gencode overlapping gene names...", file=sys.stderr)
-        gencode_field_val_dict = get_gtf_field_val_dict(gencode_reference_gtf, entry_type_filter=GENE_ENTRY_STRING)
-        print(f"Assigning overlapping genes...", file=sys.stderr)
-        raw_overlap_gene_names, raw_overlap_gene_ids, raw_ambiguity_markers = get_approximate_gencode_gene_assignments(gtf_field_dict, gencode_field_val_dict)
+        if force_overwrite_gencode_overlaps:
+            print(f"Adding gencode overlapping gene names (FORCED)...", file=sys.stderr, end="")
+            col_df["gencode_overlap_gene_names"] = gene_names
+            col_df["gencode_overlap_gene_ids"] = gene_ids
+            col_df["is_gencode_gene_overlap_ambiguous"] = [False] * len(gene_names)
+            print("Done!", file=sys.stderr)
+        else:
+            print(f"Adding gencode overlapping gene names...", file=sys.stderr)
+            gencode_field_val_dict = get_gtf_field_val_dict(gencode_reference_gtf, entry_type_filter=GENE_ENTRY_STRING)
+            print(f"Assigning overlapping genes...", file=sys.stderr)
+            raw_overlap_gene_names, raw_overlap_gene_ids, raw_ambiguity_markers = get_approximate_gencode_gene_assignments(gtf_field_dict, gencode_field_val_dict)
 
-        # Reorder by tx_id:
-        overlap_gene_names = [None] * len(raw_overlap_gene_names)
-        overlap_gene_ids = [None] * len(raw_overlap_gene_ids)
-        ambiguity_markers = np.empty(len(raw_ambiguity_markers), dtype=bool)
-        for i, tx in enumerate(gtf_field_dict.keys()):
-            indx = np.where(de_novo_transcript_ids == tx)[0]
-            if len(indx) > 1:
-                raise RuntimeError(f"Error: transcript appears more than once: {tx} ({i}): {indx}")
-            indx = indx[0]
-            print(f"TX Assignment: {tx} ({i}): {indx} - {raw_overlap_gene_names[i]} <{raw_overlap_gene_ids[i]}>", file=sys.stderr)
-            overlap_gene_names[indx] = raw_overlap_gene_names[i]
-            overlap_gene_ids[indx] = raw_overlap_gene_ids[i]
-            ambiguity_markers[indx] = raw_ambiguity_markers[i]
+            # Reorder by tx_id:
+            overlap_gene_names = [None] * len(raw_overlap_gene_names)
+            overlap_gene_ids = [None] * len(raw_overlap_gene_ids)
+            ambiguity_markers = np.empty(len(raw_ambiguity_markers), dtype=bool)
+            for i, tx in enumerate(gtf_field_dict.keys()):
+                indx = np.where(de_novo_transcript_ids == tx)[0]
+                if len(indx) > 1:
+                    raise RuntimeError(f"Error: transcript appears more than once: {tx} ({i}): {indx}")
+                elif len(indx) == 0:
+                    print(f"No TX assignment for {tx} ({i})", file=sys.stderr)
+                    continue
 
-        col_df["gencode_overlap_gene_names"] = overlap_gene_names
-        col_df["gencode_overlap_gene_ids"] = overlap_gene_ids
-        col_df["is_gencode_gene_overlap_ambiguous"] = ambiguity_markers
-        print(f"Num overlap assignments: {len([n for n in overlap_gene_names if not n.startswith('STRG')])}", file=sys.stderr)
-        print(f"Num ambiguous assignments: {len(np.where(ambiguity_markers == True)[0])}", file=sys.stderr)
-        print("Done!", file=sys.stderr)
+                indx = indx[0]
+                print(f"TX Assignment: {tx} ({i}): {indx} - {raw_overlap_gene_names[i]} <{raw_overlap_gene_ids[i]}>", file=sys.stderr)
+                overlap_gene_names[indx] = raw_overlap_gene_names[i]
+                overlap_gene_ids[indx] = raw_overlap_gene_ids[i]
+                ambiguity_markers[indx] = raw_ambiguity_markers[i]
+
+            for i, v in enumerate(overlap_gene_names):
+                if v is None:
+                    overlap_gene_names[i] = "None"
+
+            for i, v in enumerate(overlap_gene_ids):
+                if v is None:
+                    overlap_gene_ids[i] = "None"
+
+            col_df["gencode_overlap_gene_names"] = overlap_gene_names
+            col_df["gencode_overlap_gene_ids"] = overlap_gene_ids
+            col_df["is_gencode_gene_overlap_ambiguous"] = ambiguity_markers
+            print(f"Num overlap assignments: {len([n for n in overlap_gene_names if (n is not None) and not n.startswith('STRG')])}", file=sys.stderr)
+            print(f"Num ambiguous assignments: {len(np.where(ambiguity_markers == True)[0])}", file=sys.stderr)
+            print("Done!", file=sys.stderr)
 
     # Assign the data to our anndata object:
     count_adata.var = col_df
@@ -497,7 +517,8 @@ def read_intervals_from_tsv(filename):
 
 
 def main(input_tsv, gtf_file, out_prefix,
-         overlap_interval_filename=None, overlap_intervals_label=None, gencode_reference_gtf=None):
+         overlap_interval_filename=None, overlap_intervals_label=None, gencode_reference_gtf=None,
+         force_overwrite_gencode_overlaps=False):
 
     print("Verifying input file(s) exist...", file=sys.stderr)
     files_ok = True
@@ -526,7 +547,8 @@ def main(input_tsv, gtf_file, out_prefix,
     # Create our anndata objects from the given data:
     print("Creating master anndata objects from transcripts counts data...", file=sys.stderr)
     master_adata = create_combined_anndata(
-        input_tsv, gtf_field_dict, overlap_intervals, overlap_intervals_label, gencode_reference_gtf
+        input_tsv, gtf_field_dict, overlap_intervals, overlap_intervals_label,
+        gencode_reference_gtf, force_overwrite_gencode_overlaps=force_overwrite_gencode_overlaps
     )
 
     # Write our data out as pickles:
@@ -572,5 +594,12 @@ if __name__ == "__main__":
                         help="Gencode GTF file to use to disambiguate the annotations in the given gtf file.",
                         type=str)
 
+    parser.add_argument("--force-overwrite-gencode-overlaps",
+                        help="Forces the values in `gene_names` and `gene_ids` to overwrite `gencode_overlap_gene_names`"
+                             " and `gencode_overlap_gene_ids` respectively.  This is only valid if given with "
+                             "--gencode-reference-gtf.",
+                        action='store_true')
+
     args = parser.parse_args()
-    main(args.tsv, args.gtf, args.out_base_name, args.overlap_intervals, args.overlap_interval_label, args.gencode_reference_gtf)
+    main(args.tsv, args.gtf, args.out_base_name, args.overlap_intervals, args.overlap_interval_label,
+         args.gencode_reference_gtf, args.force_overwrite_gencode_overlaps)

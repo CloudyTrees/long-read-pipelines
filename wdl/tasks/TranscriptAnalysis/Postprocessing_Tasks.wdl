@@ -115,6 +115,8 @@ task CreateCountMatrixAnndataFromTsv {
         File count_matrix_tsv
         File genome_annotation_gtf_file
 
+        Boolean force_anndata_gencode_overwrite = false
+
         String prefix = "umi_tools_group"
 
         File? overlap_intervals
@@ -130,6 +132,8 @@ task CreateCountMatrixAnndataFromTsv {
     String overlap_interval_label_arg = if defined(overlap_interval_label) then " --overlap-interval-label " else ""
     String gencode_reference_gtf_file_arg = if defined(gencode_reference_gtf_file) then " --gencode-reference-gtf " else ""
 
+    String force_gencode_overwrite_flag = if force_anndata_gencode_overwrite then " --force-overwrite-gencode-overlaps " else ""
+
     command <<<
         set -euxo pipefail
         /python_scripts/create_count_matrix_anndata_from_tsv.py \
@@ -138,6 +142,7 @@ task CreateCountMatrixAnndataFromTsv {
             ~{overlap_intervals_arg}~{default="" sep=" --overlap-intervals " overlap_intervals} \
             ~{overlap_interval_label_arg}~{default="" sep=" --overlap-interval-label " overlap_interval_label} \
             ~{gencode_reference_gtf_file_arg}~{default="" sep=" --gencode-reference-gtf " gencode_reference_gtf_file} \
+            ~{force_gencode_overwrite_flag} \
             -o ~{prefix}
     >>>
 
@@ -154,7 +159,7 @@ task CreateCountMatrixAnndataFromTsv {
         boot_disk_gb:       10,
         preemptible_tries:  2,
         max_retries:        1,
-        docker:             "us.gcr.io/broad-dsp-lrma/lr-transcript_utils:0.0.6"
+        docker:             "us.gcr.io/broad-dsp-lrma/lr-transcript_utils:0.0.7"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {

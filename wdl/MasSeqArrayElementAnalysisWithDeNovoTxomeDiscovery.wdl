@@ -97,27 +97,31 @@ workflow MasSeqArrayElementAnalysisWithDeNovoTxomeDiscovery {
         # We need to restore the annotations we created with the 10x tool to the aligned reads.
         call TENX.RestoreAnnotationstoAlignedBam as t_05_RestoreAnnotationsToGenomeAlignedBam {
             input:
-                annotated_bam_file = array_element_bam,
+                annotated_bam_file = sharded_array_elements,
                 aligned_bam_file = t_04_AlignArrayElementsToGenome.aligned_bam,
                 tags_to_ignore = [],
                 mem_gb = 8,
         }
     }
 
-    # Merge all CCS bams together for this Subread BAM:
     RuntimeAttr merge_extra_cpu_attrs = object {
         cpu_cores: 4
     }
     call Utils.MergeBams as t_06_MergeGenomeAlignedExtractedArrayElements { input: bams = t_05_RestoreAnnotationsToGenomeAlignedBam.output_bam, prefix = sample_name + "_array_elements_longbow_extracted_genome_aligned", runtime_attr_override = merge_extra_cpu_attrs }
 
+    RuntimeAttr st2_big_mem = object {
+        cpu_cores: 4,
+        mem_gb: 16
+    }
     call StringTie2.Quantify as t_07_ST2_Quant {
-            input:
-                aligned_bam = t_06_MergeGenomeAlignedExtractedArrayElements.merged_bam,
-                aligned_bai = t_06_MergeGenomeAlignedExtractedArrayElements.merged_bai,
-                gtf = genome_annotation_gtf,
-                keep_retained_introns = false,
-                prefix = sample_name + "_StringTie2_Quantify",
-        }
+        input:
+            aligned_bam = t_06_MergeGenomeAlignedExtractedArrayElements.merged_bam,
+            aligned_bai = t_06_MergeGenomeAlignedExtractedArrayElements.merged_bai,
+            gtf = genome_annotation_gtf,
+            keep_retained_introns = false,
+            prefix = sample_name + "_StringTie2_Quantify",
+            runtime_attr_override = st2_big_mem,
+    }
 
     call StringTie2.ExtractTranscriptSequences as t_08_ST2_ExtractTranscriptSequences  {
         input:
